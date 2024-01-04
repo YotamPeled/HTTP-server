@@ -77,7 +77,7 @@ public class HttpServer {
                     eRequestType requestType = eRequestType.valueOf(method);
                     switch(requestType){
                         case GET:
-                            HttpResponse.notFound(writer);
+                            HttpResponse.okFromFile(writer, defaultPage);
                     }
                 } catch (IllegalArgumentException e) {
                     // return 501 bad request
