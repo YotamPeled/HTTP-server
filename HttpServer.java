@@ -71,11 +71,18 @@ public class HttpServer {
                 }
 
                 String request = requestBuilder.toString();
+                String method = request.split(" ")[0];
+                // get the request type
+                try {
+                    eRequestType requestType = eRequestType.valueOf(method);
+                    switch(requestType){
+                        case GET:
+                            HttpResponse.notFound(writer);
+                    }
+                } catch (IllegalArgumentException e) {
+                    // return 501 bad request
+                }
 
-                // At this point, 'request' contains the HTTP request from the client.
-                // You would then parse the request to understand what the client is asking for.
-
-                HttpResponse.notFound(writer);
                 // Always close the client socket and streams after handling the request
                 reader.close();
                 output.close();
