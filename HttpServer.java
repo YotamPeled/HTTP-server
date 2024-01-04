@@ -75,12 +75,7 @@ public class HttpServer {
                 // At this point, 'request' contains the HTTP request from the client.
                 // You would then parse the request to understand what the client is asking for.
 
-                writer.println("HTTP/1.1 404 Not Found");
-                writer.println("Content-Type: text/html");
-                writer.println("Connection: close");
-                writer.println(); // blank line between headers and content, very important!
-                writer.println("<html><body><h1>404 Not Found</h1>The requested resource was not found on this server.</body></html>");
-
+                HttpResponse.notFound(writer);
                 // Always close the client socket and streams after handling the request
                 reader.close();
                 output.close();
