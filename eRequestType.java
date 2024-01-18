@@ -2,5 +2,11 @@ public enum eRequestType {
     GET,
     POST,
     HEAD,
-    TRACE
+    TRACE,
+    // not implemented
+    PUT,
+    DELETE,
+    CONNECT,
+    OPTIONS,
+    PATCH
 }

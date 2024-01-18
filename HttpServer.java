@@ -71,16 +71,22 @@ public class HttpServer {
                 }
 
                 String request = requestBuilder.toString();
+                System.out.println("user request: \n" + request);
+                request.replaceAll("../", "");
                 String method = request.split(" ")[0];
+                String[] requestedPage = request.split(" ")[1].split("\\?");
+                Boolean isChunked = request.contains("chunked: yes");
                 // get the request type
+                String serverResponse = "";
+                requestedPage[0] = rootDirectory + requestedPage[0];
                 try {
                     eRequestType requestType = eRequestType.valueOf(method);
-                    switch(requestType){
-                        case GET:
-                            HttpResponse.okFromFile(writer, defaultPage);
-                    }
+                    HttpResponse.ProcessRequest(writer, requestType, requestedPage, isChunked);
                 } catch (IllegalArgumentException e) {
-                    // return 501 bad request
+                    HttpResponse.serverError(writer, "");
+                }
+                finally {
+                    System.out.println(serverResponse);
                 }
 
                 // Always close the client socket and streams after handling the request
