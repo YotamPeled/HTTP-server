@@ -82,6 +82,7 @@ public class HttpResponse {
 
         // Send the response body in chunks
         int start = 0;
+        int counter = 0;
         while (start < responseBodyBytes.length) {
             // Determine the size of the current chunk
             int end = Math.min(responseBodyBytes.length, start + chunkSize);
@@ -89,7 +90,6 @@ public class HttpResponse {
 
             // Send the size of the current chunk in hexadecimal
             writer.println(Integer.toHexString(currentChunkSize));
-
             // Send the current chunk of the response body
             writer.write(new String(responseBodyBytes, start, currentChunkSize, StandardCharsets.UTF_8));
             writer.println(); // End of the chunk
@@ -126,13 +126,25 @@ public class HttpResponse {
         }
     }
 
-    public static void ProcessRequest(PrintWriter writer, eRequestType requestType, String[] request, Boolean isChunkedResponse) {
+    public static void ProcessRequest(PrintWriter writer, StringBuilder requestBuilder) {
+        String request = requestBuilder.toString();
+        request.replaceAll("../", "");
+        String method = request.split(" ")[0];
+        Boolean isChunked = request.contains("chunked: yes");
+        eRequestType requestType = eRequestType.valueOf(method);
+        String requestedPage = request.split(" ")[1].split("\\?")[0];
+        requestedPage = HttpServer.getRootDirectory() + requestedPage;
+
         switch (requestType){
             case GET:
-               processGetRequest(writer, request[0], isChunkedResponse);
+
+                // add param support after ?
+                processGetRequest(writer, requestedPage, isChunked);
                break;
             case POST:
-                processPostRequest(writer, request, isChunkedResponse);
+                String[] requestLines = request.split("\\r?\\n");
+                String requestedParams = requestLines[requestLines.length - 1];
+                processPostRequest(writer, requestedPage, requestedParams, isChunked);
                 break;
             case PUT:
             case PATCH:
@@ -147,8 +159,16 @@ public class HttpResponse {
         }
     }
 
-    private static void processPostRequest(PrintWriter writer, String[] request, Boolean isChunked) {
-
+    private static void processPostRequest(PrintWriter writer, String requestPage, String requestParams, Boolean isChunked) {
+        try{
+            FormData data = new FormData(requestParams);
+            HttpServer.InsertData(data);
+            //System.out.println(data);
+            okFromFile(writer, requestPage, isChunked);
+        }
+        catch (IOException exception){
+            notFound(writer);
+        }
     }
 
     private static void badRequest(PrintWriter writer) {

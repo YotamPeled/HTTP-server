@@ -1,14 +1,22 @@
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Properties;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public class HttpServer {
-
+    private static final Object lock = new Object();
+    private static ArrayList<FormData> Data;
     private int port;
-    private File rootDirectory;
+
+    public static File getRootDirectory() {
+        return rootDirectory;
+    }
+
+    private static File rootDirectory;
     private String defaultPage;
     private ExecutorService threadPool;
 
@@ -21,10 +29,19 @@ public class HttpServer {
             this.defaultPage = config.getProperty("defaultPage");
             int maxThreads = Integer.parseInt(config.getProperty("maxThreads"));
             this.threadPool = Executors.newFixedThreadPool(maxThreads);
+            this.Data = new ArrayList<FormData>();
         } catch (IOException e) {
             e.printStackTrace();
             System.out.println("failure during server configuration");
             System.exit(1);
+        }
+    }
+
+    public static void InsertData(FormData i_Data)
+    {
+        synchronized(lock) {
+            Data.add(i_Data);
+            System.out.println(Data.toString());
         }
     }
 
@@ -66,23 +83,31 @@ public class HttpServer {
                 // Read the request line by line
                 String line;
                 StringBuilder requestBuilder = new StringBuilder();
+                int contentLength = 0;
                 while ((line = reader.readLine()) != null && !line.isEmpty()) {
+                    if (line.startsWith("Content-Length:")) {
+                        contentLength = Integer.parseInt(line.substring("Content-Length:".length()).trim());
+                    }
                     requestBuilder.append(line + "\r\n");
                 }
 
-                String request = requestBuilder.toString();
-                System.out.println("user request: \n" + request);
-                request.replaceAll("../", "");
-                String method = request.split(" ")[0];
-                String[] requestedPage = request.split(" ")[1].split("\\?");
-                Boolean isChunked = request.contains("chunked: yes");
+                // print the request headers
+                System.out.println("user request: \n" + requestBuilder.toString());
+
+                // Read body if Content-Length is present
+                if (contentLength > 0) {
+                    char[] body = new char[contentLength];
+                    reader.read(body, 0, contentLength);
+                    requestBuilder.append(new String(body));
+                }
+
+
                 // get the request type
                 String serverResponse = "";
-                requestedPage[0] = rootDirectory + requestedPage[0];
+
                 try {
-                    eRequestType requestType = eRequestType.valueOf(method);
-                    HttpResponse.ProcessRequest(writer, requestType, requestedPage, isChunked);
-                } catch (IllegalArgumentException e) {
+                    HttpResponse.ProcessRequest(writer, requestBuilder);
+                } catch (Exception e) {
                     HttpResponse.serverError(writer, "");
                 }
                 finally {
