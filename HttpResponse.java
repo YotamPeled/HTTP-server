@@ -20,9 +20,13 @@ public class HttpResponse {
         sendResponse(new HttpResponse(404, "text/html", notFoundHtml), writer);
     }
 
-    private static void okFromFile(PrintWriter writer, String filePath, Boolean isChunked) throws IOException {
+    private static void okFromFile(PrintWriter writer, String filePath, Boolean isChunked, boolean headerOnly) throws IOException {
         String body = readFile(filePath);
-        if (isChunked){
+        if (headerOnly)
+        {
+            sendHeader(new HttpResponse(200, "text/html", body), writer);
+        }
+        else if (isChunked){
             sendChunkedResponse(new HttpResponse(200, "text/html", body), writer);
         }
         else {
@@ -46,7 +50,8 @@ public class HttpResponse {
         sendResponse(new HttpResponse(500, "text/html", "<html><body><h1>500 Server Error</h1><p>" + message + "</p></body></html>"), writer);
     }
 
-    private static void sendResponse(HttpResponse response, PrintWriter writer) {
+
+    private static void sendHeader(HttpResponse response, PrintWriter writer){
         StringBuilder header = new StringBuilder();
         header.append("HTTP/1.1 " + response.statusCode + " " + getStatusText(response.statusCode));
         header.append(System.lineSeparator());
@@ -57,22 +62,15 @@ public class HttpResponse {
         //send the headers
         System.out.println(header);
         writer.println(header);
-        // Send the body
+    }
+
+    private static void sendResponse(HttpResponse response, PrintWriter writer) {
+        sendHeader(response, writer);
         writer.println(response.body);
     }
 
     private static void sendChunkedResponse(HttpResponse response, PrintWriter writer) {
-        StringBuilder header = new StringBuilder();
-
-        // Build the HTTP start line and headers
-        header.append("HTTP/1.1 ").append(response.statusCode).append(" ").append(getStatusText(response.statusCode)).append(System.lineSeparator());
-        header.append("Content-Type: ").append(response.contentType).append(System.lineSeparator());
-        header.append("Transfer-Encoding: chunked").append(System.lineSeparator());
-        header.append(System.lineSeparator()); // End of headers
-
-        // Send the headers
-        System.out.println(header);
-        writer.print(header);
+        sendHeader(response, writer);
 
         // Convert the response body to an array of bytes
         byte[] responseBodyBytes = response.body.getBytes(StandardCharsets.UTF_8);
@@ -129,16 +127,22 @@ public class HttpResponse {
     public static void ProcessRequest(PrintWriter writer, StringBuilder requestBuilder) {
         String request = requestBuilder.toString();
         request.replaceAll("../", "");
-        String method = request.split(" ")[0];
+        String method = request.split(" ")[0].replaceAll("\\s+$", "");
+
         Boolean isChunked = request.contains("chunked: yes");
         eRequestType requestType = eRequestType.valueOf(method);
-        String requestedPage = request.split(" ")[1].split("\\?")[0];
+        String requestedPage = request.split(" ").length > 1 ? request.split(" ")[1].split("\\?")[0].replaceAll("\\s+$", "") : "";
+        System.out.println(requestedPage);
+        String URLParams = "";
+        if (request.split(" ").length > 1 && request.split(" ")[1].split("\\?").length > 1)
+        {
+            URLParams = request.split(" ")[1].split("\\?")[1];
+        }
+
         requestedPage = HttpServer.getRootDirectory() + requestedPage;
 
         switch (requestType){
             case GET:
-
-                // add param support after ?
                 processGetRequest(writer, requestedPage, isChunked);
                break;
             case POST:
@@ -146,6 +150,11 @@ public class HttpResponse {
                 String requestedParams = requestLines[requestLines.length - 1];
                 processPostRequest(writer, requestedPage, requestedParams, isChunked);
                 break;
+            case TRACE:
+                processTraceRequest(writer, request);
+                break;
+            case HEAD:
+                processHeadRequest(writer, request);
             case PUT:
             case PATCH:
             case DELETE:
@@ -159,12 +168,32 @@ public class HttpResponse {
         }
     }
 
+    private static void processHeadRequest(PrintWriter writer, String request) {
+        try {
+            okFromFile(writer, request, false, true);
+        }
+        catch(IOException exception) {
+            notFound(writer);
+        }
+    }
+
+    private static void processTraceRequest(PrintWriter writer, String request) {
+        writer.println(request);
+    }
+
     private static void processPostRequest(PrintWriter writer, String requestPage, String requestParams, Boolean isChunked) {
         try{
-            FormData data = new FormData(requestParams);
-            HttpServer.InsertData(data);
-            //System.out.println(data);
-            okFromFile(writer, requestPage, isChunked);
+            try {
+                FormData data = new FormData(requestParams);
+                HttpServer.InsertData(data);
+            }
+            catch(IllegalArgumentException e){
+                System.out.println("illegal post params");
+            }
+            finally
+            {
+                okFromFile(writer, requestPage, isChunked, false);
+            }
         }
         catch (IOException exception){
             notFound(writer);
@@ -187,7 +216,7 @@ public class HttpResponse {
 
     private static void processGetRequest(PrintWriter writer, String requestedPage, Boolean isChunked) {
         try{
-            okFromFile(writer, requestedPage, isChunked);
+            okFromFile(writer, requestedPage, isChunked, false);
         }
         catch(IOException exception) {
             notFound(writer);

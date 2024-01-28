@@ -108,6 +108,7 @@ public class HttpServer {
                 try {
                     HttpResponse.ProcessRequest(writer, requestBuilder);
                 } catch (Exception e) {
+                    e.printStackTrace();
                     HttpResponse.serverError(writer, "");
                 }
                 finally {

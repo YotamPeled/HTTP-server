@@ -4,6 +4,8 @@ public class FormData {
     private String Subject;
     private String Message;
 
+    public final int NUM_PARAM = 4;
+
     public FormData(String Params) {
         if (isValidParams(Params))
         {
@@ -11,17 +13,40 @@ public class FormData {
         }
         else
         {
-            throw new IllegalArgumentException("invalid POST parameters");
+            throw new IllegalArgumentException("invalid parameters");
         }
     }
 
     private boolean isValidParams(String params) {
-        // later
-        return true;
+        boolean isValid = true;
+        String[] requestedParams = params.split("&");
+        String[] keys = new String[requestedParams.length];
+
+        // Process each key
+        for (int i = 0; i < requestedParams.length; i++) {
+            String[] keyValue = requestedParams[i].split("=");
+            keys[i] = keyValue[0]; // Store only the key
+        }
+
+        for (String key : keys) {
+             isValid &= isValidParam(key);
+        }
+
+        return isValid && keys.length == this.NUM_PARAM;
     }
 
-    private void mapParams(String params) {
+    private boolean isValidParam(String value)
+    {
+        return ("sender".equals(value) || "receiver".equals(value) || "subject".equals(value) || "message".equals(value));
+    }
+    private void mapParams(String params) throws IllegalArgumentException {
         String[]  requestedParams = params.split("&");
+        for (String value : requestedParams) {
+            if (value.split("=").length <= 1)
+            {
+                throw new IllegalArgumentException("empty param");
+            }
+        }
         this.Sender = requestedParams[0].split("=")[1];
         this.Reciever = requestedParams[1].split("=")[1];
         this.Subject = requestedParams[2].split("=")[1];
