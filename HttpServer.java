@@ -77,7 +77,7 @@ public class HttpServer {
                 // Open input and output streams for the socket
                 InputStream input = clientSocket.getInputStream();
                 OutputStream output = clientSocket.getOutputStream();
-                PrintWriter writer = new PrintWriter(output, true);
+                //PrintWriter writer = new PrintWriter(output, true);
                 BufferedReader reader = new BufferedReader(new InputStreamReader(input));
 
                 // Read the request line by line
@@ -106,10 +106,10 @@ public class HttpServer {
                 String serverResponse = "";
 
                 try {
-                    HttpResponse.ProcessRequest(writer, requestBuilder);
+                    HttpResponse.ProcessRequest(output, requestBuilder);
                 } catch (Exception e) {
                     e.printStackTrace();
-                    HttpResponse.serverError(writer, "");
+                  //  HttpResponse.serverError(writer, "");
                 }
                 finally {
                     System.out.println(serverResponse);
