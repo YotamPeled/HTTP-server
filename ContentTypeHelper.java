@@ -4,7 +4,6 @@ public class ContentTypeHelper {
     public static ContentType GetContentType(String file) throws IOException{
         String[] fileSplitted = file.split("\\.");
         String fileExtension = fileSplitted[fileSplitted.length - 1];
-
         return getContentTypeFromFileExtension(fileExtension);
     }
 
@@ -23,7 +22,8 @@ public class ContentTypeHelper {
         jpg("image/jpg"),
         png("image/png"),
         bmp("image/bmp"),
-        gif("image/gif");
+        gif("image/gif"),
+        ico("image/x-icon");
 
         private String description;
 

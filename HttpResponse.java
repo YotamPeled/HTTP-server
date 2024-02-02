@@ -64,6 +64,7 @@ public class HttpResponse {
 
     private static void okFromImage(OutputStream out, String filePath, Boolean isChunked, boolean headerOnly) throws IOException {
         String body = readFile(filePath);
+        byte[] imageBytes = Files.readAllBytes(Paths.get(filePath));
         String type = ContentTypeHelper.GetContentType(filePath).GetDescription();
         if (headerOnly)
         {
@@ -71,10 +72,10 @@ public class HttpResponse {
             HTMLHelper.SendHeader(new HttpResponse(200, type, body), writer);
         }
         else if (isChunked){
-            ImageHelper.SendChunkedResponse(new HttpResponse(200, type, body), out);
+            ImageHelper.SendChunkedResponse(new HttpResponse(200, type, body), out, imageBytes);
         }
         else {
-            ImageHelper.SendResponse(new HttpResponse(200, type, body), out);
+            ImageHelper.SendResponse(new HttpResponse(200, type, body), out, imageBytes);
         }
     }
 
