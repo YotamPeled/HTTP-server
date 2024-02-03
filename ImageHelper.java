@@ -36,21 +36,19 @@ public class ImageHelper {
         PrintWriter writer = response.getWriter();
         HTMLHelper.SendHeader(response, writer);
 
-        try{
-            if (response.isChunked())
-            {
-                sendChunkedResponse(response);
+        if (!response.isHeaderOnly()) {
+            try {
+                if (response.isChunked()) {
+                    sendChunkedResponse(response);
+                } else {
+                    response.getOutput().write(response.getBody());
+                    response.getOutput().flush();
+                }
+            } catch (IOException ex) {
+                ex.printStackTrace();
+                //todo handle io error
+                System.out.println("error sending image");
             }
-            else{
-                response.getOutput().write(response.getBody());
-                response.getOutput().flush();
-            }
-        }
-        catch (IOException ex)
-        {
-            ex.printStackTrace();
-            //todo handle io error
-            System.out.println("error sending image");
         }
     }
 

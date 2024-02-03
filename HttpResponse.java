@@ -82,7 +82,7 @@ public class HttpResponse {
                 processTraceRequest(output, request);
                 break;
             case HEAD:
-                processHeadRequest(output, request, isChunked);
+                processHeadRequest(output, requestedPage, isChunked);
                 break;
             case PUT:
             case PATCH:
@@ -107,7 +107,7 @@ public class HttpResponse {
     }
 
     private static void processTraceRequest(OutputStream output, String request) {
-        PrintWriter writer = new PrintWriter(output);
+        PrintWriter writer = new PrintWriter(output, true);
         writer.println(request);
     }
 

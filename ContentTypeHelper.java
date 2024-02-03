@@ -19,11 +19,11 @@ public class ContentTypeHelper {
 
     public enum ContentType {
         html("text/html"),
-        jpg("image/jpg"),
-        png("image/png"),
-        bmp("image/bmp"),
-        gif("image/gif"),
-        ico("image/x-icon");
+        jpg("image"),
+        png("image"),
+        bmp("image"),
+        gif("image"),
+        ico("icon");
 
         private String description;
 
