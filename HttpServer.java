@@ -109,7 +109,7 @@ public class HttpServer {
                     HttpResponse.ProcessRequest(output, requestBuilder);
                 } catch (Exception e) {
                     e.printStackTrace();
-                  //  HttpResponse.serverError(writer, "");
+                    HttpResponse.serverError(output);
                 }
                 finally {
                     System.out.println(serverResponse);

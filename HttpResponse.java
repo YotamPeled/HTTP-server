@@ -1,110 +1,60 @@
-import javax.imageio.ImageIO;
-import java.awt.image.BufferedImage;
 import java.io.*;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.Base64;
 
 public class HttpResponse {
-    private int statusCode;
-    private String contentType;
-    private String body;
+    private int StatusCode;
+    private ContentTypeHelper.ContentType ContentType;
+    private PrintWriter Writer;
+    private byte[] Body;
+    private OutputStream output;
+    private Boolean IsHeadOnly;
+    private Boolean IsChunked;
 
-    private HttpResponse(int statusCode, String contentType, String body) {
-        this.statusCode = statusCode;
-        this.contentType = contentType;
-        this.body = body;
+    private HttpResponse(int statusCode, ContentTypeHelper.ContentType contentType, byte[] body, Boolean isHeadOnly, Boolean isChunked, OutputStream output) {
+        this.Writer = new PrintWriter(output, true);
+        this.output = output;
+        this.StatusCode = statusCode;
+        this.ContentType = contentType;
+        this.Body = body;
+        this.IsHeadOnly = isHeadOnly;
+        this.IsChunked = isChunked;
+
+        sendResponse();
     }
 
-    public String getBody() {
-        return body;
+    public Boolean isChunked() {return IsChunked;}
+    public PrintWriter getWriter() {return Writer;}
+    public OutputStream getOutput() {return output;}
+    public byte[] getBody() {
+        return Body;
     }
-
     public int getStatusCode() {
-        return statusCode;
+        return StatusCode;
     }
-
     public String getContentType() {
-        return contentType;
+        return ContentType.GetDescription();
     }
+    public boolean isHeaderOnly() {return IsHeadOnly;}
 
-    private static void notFound(PrintWriter writer) {
-        String notFoundHtml = "<html><head><title>404 Not Found</title></head>"
-                + "<body><h1>404 Not Found</h1>"
-                + "<p>The resource you are looking for might have been removed, had its name changed, or is temporarily unavailable.</p></body></html>";
-        HTMLHelper.SendResponse(new HttpResponse(404, "text/html", notFoundHtml), writer);
-    }
-
-    private static void okFromFile(PrintWriter writer, String filePath, Boolean isChunked, boolean headerOnly) throws IOException {
-        String body = readFile(filePath);
-
-        if (headerOnly)
+    private void sendResponse(){
+        if (this.ContentType == ContentTypeHelper.ContentType.html)
         {
-            HTMLHelper.SendHeader(new HttpResponse(200, ContentTypeHelper.ContentType.html.GetDescription(), body), writer);
+            HTMLHelper.SendResponse(this);
         }
-        else if (isChunked){
-            HTMLHelper.SendChunkedResponse(new HttpResponse(200, ContentTypeHelper.ContentType.html.GetDescription(), body), writer);
-        }
-        else {
-            HTMLHelper.SendResponse(new HttpResponse(200, ContentTypeHelper.ContentType.html.GetDescription(), body), writer);
+        else{
+            ImageHelper.SendResponse(this);
         }
     }
-
-    private static String readFile(String filePath) throws IOException {
-        StringBuilder contentBuilder = new StringBuilder();
-        BufferedReader br = new BufferedReader(new FileReader(filePath));
-        String line;
-        while ((line = br.readLine()) != null) {
-            contentBuilder.append(line).append("\n");
-        }
-
-        return contentBuilder.toString();
+    private static void notFound(OutputStream output, Boolean isChunked) {
+        new HttpResponse(404, ContentTypeHelper.ContentType.html, BodyFactory.GetPredefinedBody(404), false, isChunked,output);
     }
 
-    private static void okFromImage(OutputStream out, String filePath, Boolean isChunked, boolean headerOnly) throws IOException {
-        String body = readFile(filePath);
-        byte[] imageBytes = Files.readAllBytes(Paths.get(filePath));
-        String type = ContentTypeHelper.GetContentType(filePath).GetDescription();
-        if (headerOnly)
-        {
-            PrintWriter writer = new PrintWriter(out, true);
-            HTMLHelper.SendHeader(new HttpResponse(200, type, body), writer);
-        }
-        else if (isChunked){
-            ImageHelper.SendChunkedResponse(new HttpResponse(200, type, body), out, imageBytes);
-        }
-        else {
-            ImageHelper.SendResponse(new HttpResponse(200, type, body), out, imageBytes);
-        }
-    }
-
-    public static void serverError(PrintWriter writer, String message) {
-        HTMLHelper.SendResponse(new HttpResponse(500, "text/html", "<html><body><h1>500 Server Error</h1><p>" + message + "</p></body></html>"), writer);
-    }
-
-// Note: Ensure the getStatusText method is defined to return the appropriate status text for the given status code.
-
-
-    public static String GetStatusText(int statusCode) {
-        switch (statusCode) {
-            case 200:
-                return "OK";
-            case 400:
-                return "Bad Request";
-            case 404:
-                return "Not Found";
-            case 500:
-                return "Internal Server Error";
-            case 501:
-                return "Not Implemented";
-            default:
-                return "Unknown";
-        }
+    public static void serverError(OutputStream output) {
+        new HttpResponse(500, ContentTypeHelper.ContentType.html, BodyFactory.GetPredefinedBody(500), false, false, output);
     }
 
     public static void ProcessRequest(OutputStream output, StringBuilder requestBuilder) {
-        PrintWriter writer = new PrintWriter(output, true);
         String request = requestBuilder.toString();
         request.replaceAll("../", "");
         String method = request.split(" ")[0].replaceAll("\\s+$", "");
@@ -126,41 +76,42 @@ public class HttpResponse {
             case POST:
                 String[] requestLines = request.split("\\r?\\n");
                 String requestedParams = requestLines[requestLines.length - 1];
-                processPostRequest(writer, requestedPage, requestedParams, isChunked);
+                processPostRequest(output, requestedPage, requestedParams, isChunked);
                 break;
             case TRACE:
-                processTraceRequest(writer, request);
+                processTraceRequest(output, request);
                 break;
             case HEAD:
-                processHeadRequest(writer, request);
+                processHeadRequest(output, request, isChunked);
                 break;
             case PUT:
             case PATCH:
             case DELETE:
             case CONNECT:
             case OPTIONS:
-                notImplemented(writer);
+                notImplemented(output, isChunked);
                 break;
             default:
-                badRequest(writer);
+                badRequest(output, isChunked);
                 break;
         }
     }
 
-    private static void processHeadRequest(PrintWriter writer, String request) {
-        try {
-            okFromFile(writer, request, false, true);
+    private static void processHeadRequest(OutputStream output, String filePath, Boolean isChunked) {
+        try{
+            readAndSendFile(output, filePath, isChunked, true);
         }
         catch(IOException exception) {
-            notFound(writer);
+            notFound(output, isChunked);
         }
     }
 
-    private static void processTraceRequest(PrintWriter writer, String request) {
+    private static void processTraceRequest(OutputStream output, String request) {
+        PrintWriter writer = new PrintWriter(output);
         writer.println(request);
     }
 
-    private static void processPostRequest(PrintWriter writer, String requestPage, String requestParams, Boolean isChunked) {
+    private static void processPostRequest(OutputStream output, String filePath, String requestParams, Boolean isChunked) {
         try{
             try {
                 FormData data = new FormData(requestParams);
@@ -171,43 +122,34 @@ public class HttpResponse {
             }
             finally
             {
-                okFromFile(writer, requestPage, isChunked, false);
+                readAndSendFile(output, filePath, isChunked, false);
             }
         }
         catch (IOException exception){
-            notFound(writer);
+            notFound(output, isChunked);
         }
     }
 
-    private static void badRequest(PrintWriter writer) {
-        String notImplementedHtml = "<html><head><title>400 Bad Request</title></head>"
-                + "<body><h1>400 Bad Request</h1>"
-                + "<p>add later</p></body></html>";
-        HTMLHelper.SendResponse(new HttpResponse(400, "text/html", notImplementedHtml), writer);
+    private static void badRequest(OutputStream output, Boolean isChunked) {
+       new HttpResponse(400, ContentTypeHelper.ContentType.html, BodyFactory.GetPredefinedBody(400), false, isChunked,output);
     }
 
-    private static void notImplemented(PrintWriter writer) {
-        String notImplementedHtml = "<html><head><title>501 Not Implemented</title></head>"
-                + "<body><h1>501 Not Implemented</h1>"
-                + "<p>add later</p></body></html>";
-        HTMLHelper.SendResponse(new HttpResponse(501, "text/html", notImplementedHtml), writer);
+    private static void notImplemented(OutputStream output, Boolean isChunked) {
+        new HttpResponse(501, ContentTypeHelper.ContentType.html, BodyFactory.GetPredefinedBody(501), false, isChunked,output);
     }
 
-    private static void processGetRequest(OutputStream output, String requestedPage, Boolean isChunked) {
-        PrintWriter writer = new PrintWriter(output, true);
-
+    private static void processGetRequest(OutputStream output, String filePath, Boolean isChunked) {
         try{
-            ContentTypeHelper.ContentType type = ContentTypeHelper.GetContentType(requestedPage);
-            if (type == ContentTypeHelper.ContentType.html)
-            {
-                okFromFile(writer, requestedPage, isChunked, false);
-            }
-            else{
-                okFromImage(output, requestedPage, isChunked, false);
-            }
+            readAndSendFile(output, filePath, isChunked, false);
         }
         catch(IOException exception) {
-            notFound(writer);
+            notFound(output, isChunked);
         }
+    }
+
+    private static void readAndSendFile(OutputStream output, String filePath, Boolean isChunked, Boolean isHeadOnly) throws IOException{
+        ContentTypeHelper.ContentType type = ContentTypeHelper.GetContentType(filePath);
+        byte[] fileBytes = Files.readAllBytes(Paths.get(filePath));
+        new HttpResponse(200, type, fileBytes, isHeadOnly, isChunked, output);
     }
 }

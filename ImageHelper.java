@@ -33,12 +33,19 @@ public class ImageHelper {
         out.flush();
     }
 
-    public static void SendResponse(HttpResponse response, OutputStream out, byte[] imageBytes) throws IOException {
-        // Assuming SendHeader is adapted to use OutputStream and properly formats headers
-        PrintWriter writer = new PrintWriter(out, true);
+    public static void SendResponse(HttpResponse response){
+        PrintWriter writer = new PrintWriter(response.getWriter(), true);
         HTMLHelper.SendHeader(response, writer);
-        out.write(imageBytes);
-        out.flush();
+        try{
+            response.getOutput().write(response.getBody());
+            response.getOutput().flush();
+        }
+        catch (IOException ex)
+        {
+            ex.printStackTrace();
+            //todo handle io error
+            System.out.println("error sending image");
+        }
     }
 
 }
