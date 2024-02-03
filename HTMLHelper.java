@@ -8,7 +8,9 @@ public class HTMLHelper {
         header.append(System.lineSeparator());
         header.append("Content-Type: " + response.getContentType());
         header.append(System.lineSeparator());
-        header.append("Content-Length: " + new String(response.getBody()).length());
+
+        int headerLength = response.getContentType().equals(ContentTypeHelper.ContentType.html.GetDescription()) ? new String(response.getBody()).length() : response.getBody().length;
+        header.append("Content-Length: " + headerLength);
         header.append(System.lineSeparator());
         //send the headers
         System.out.println(header);
