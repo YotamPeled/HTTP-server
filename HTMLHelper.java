@@ -34,8 +34,10 @@ public class HTMLHelper {
         }
     }
 
-    public static void SendChunkedResponse(HttpResponse response, PrintWriter writer) {
+    private static void sendChunkedResponse(HttpResponse response) {
+        PrintWriter writer = response.getWriter();
         // Convert the response body to an array of bytes
+
         byte[] responseBodyBytes = response.getBody();
 
         // Define a chunk size
@@ -43,7 +45,6 @@ public class HTMLHelper {
 
         // Send the response body in chunks
         int start = 0;
-        int counter = 0;
         while (start < responseBodyBytes.length) {
             // Determine the size of the current chunk
             int end = Math.min(responseBodyBytes.length, start + chunkSize);
@@ -70,7 +71,13 @@ public class HTMLHelper {
 
         if(!response.isHeaderOnly())
         {
-            writer.println(new String(response.getBody()));
+            if (response.isChunked())
+            {
+                sendChunkedResponse(response);
+            }
+            else{
+                writer.println(new String(response.getBody()));
+            }
         }
     }
 }

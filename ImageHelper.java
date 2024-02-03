@@ -5,23 +5,22 @@ import java.nio.charset.StandardCharsets;
 
 public class ImageHelper {
 
-    public static void SendChunkedResponse(HttpResponse response, OutputStream out, byte[] imageBytes) throws IOException {
-        PrintWriter writer = new PrintWriter(out, true);
-        HTMLHelper.SendHeader(response, writer);
+    public static void sendChunkedResponse(HttpResponse response) throws IOException {
+        OutputStream out = response.getOutput();
 
         int chunkSize = 1024; // Define a chunk size
 
         int start = 0;
-        while (start < imageBytes.length) {
+        while (start < response.getBody().length) {
             // Determine the size of the current chunk
-            int end = Math.min(imageBytes.length, start + chunkSize);
+            int end = Math.min(response.getBody().length, start + chunkSize);
             int currentChunkSize = end - start;
 
             // Send the size of the current chunk in hexadecimal
             String sizeHeader = Integer.toHexString(currentChunkSize) + "\r\n";
             out.write(sizeHeader.getBytes(StandardCharsets.UTF_8));
             // Send the current chunk of the response body
-            out.write(imageBytes, start, currentChunkSize);
+            out.write(response.getBody(), start, currentChunkSize);
             out.write("\r\n".getBytes(StandardCharsets.UTF_8)); // End of the chunk
 
             // Move to the next chunk
@@ -34,11 +33,18 @@ public class ImageHelper {
     }
 
     public static void SendResponse(HttpResponse response){
-        PrintWriter writer = new PrintWriter(response.getWriter(), true);
+        PrintWriter writer = response.getWriter();
         HTMLHelper.SendHeader(response, writer);
+
         try{
-            response.getOutput().write(response.getBody());
-            response.getOutput().flush();
+            if (response.isChunked())
+            {
+                sendChunkedResponse(response);
+            }
+            else{
+                response.getOutput().write(response.getBody());
+                response.getOutput().flush();
+            }
         }
         catch (IOException ex)
         {
