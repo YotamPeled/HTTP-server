@@ -1,15 +1,13 @@
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Properties;
+import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public class HttpServer {
     private static final Object lock = new Object();
-    private static ArrayList<FormData> Data;
+    private static ArrayList<Map<String, String>> Data;
     private int port;
 
     public static File getRootDirectory() {
@@ -29,7 +27,7 @@ public class HttpServer {
             this.defaultPage = config.getProperty("defaultPage");
             int maxThreads = Integer.parseInt(config.getProperty("maxThreads"));
             this.threadPool = Executors.newFixedThreadPool(maxThreads);
-            this.Data = new ArrayList<FormData>();
+            this.Data = new ArrayList<Map<String, String>>();
         } catch (IOException e) {
             e.printStackTrace();
             System.out.println("failure during server configuration");
@@ -37,13 +35,46 @@ public class HttpServer {
         }
     }
 
-    public static void InsertData(FormData i_Data)
+    public static void InsertData(Map<String, String> i_Data)
     {
         synchronized(lock) {
             Data.add(i_Data);
+            System.out.println("Added New Session Request Params:");
             System.out.println(Data.toString());
         }
     }
+
+    public static String generateTableHTML() {
+        synchronized(lock) {
+            StringBuilder htmlBuilder = new StringBuilder();
+
+            // Start the table and add the header row
+            htmlBuilder.append("<table border='1'>") // Adding border for visibility, adjust styling as needed
+                    .append("<tr><th>Index</th><th>Key</th><th>Value</th></tr>");
+
+            // Increment index
+            int index = 0;
+
+            // Iterate through the list of maps
+            for (Map<String, String> paramMap : Data) {
+                index++;
+                // Iterate through each key-value pair in the current map
+                for (Map.Entry<String, String> entry : paramMap.entrySet()) {
+                    htmlBuilder.append("<tr>")
+                            .append("<td>").append(index).append("</td>") // Increment index for each key-value pair
+                            .append("<td>").append(entry.getKey()).append("</td>")
+                            .append("<td>").append(entry.getValue()).append("</td>")
+                            .append("</tr>");
+                }
+            }
+
+            // Close the table
+            htmlBuilder.append("</table>");
+
+            return htmlBuilder.toString();
+        }
+    }
+
 
     public void start() {
         try (ServerSocket serverSocket = new ServerSocket(this.port)) {
@@ -92,7 +123,7 @@ public class HttpServer {
                 }
 
                 // print the request headers
-                System.out.println("user request: \n" + requestBuilder.toString());
+                System.out.println("user request: \n" + requestBuilder);
 
                 // Read body if Content-Length is present
                 if (contentLength > 0) {
@@ -106,7 +137,7 @@ public class HttpServer {
                 String serverResponse = "";
 
                 try {
-                    HttpResponse.ProcessRequest(output, requestBuilder);
+                    HttpResponse.ProcessRequest(output, requestBuilder.toString());
                 } catch (Exception e) {
                     e.printStackTrace();
                     HttpResponse.serverError(output);

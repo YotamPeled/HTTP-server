@@ -36,11 +36,17 @@
         width: 100%;
         box-sizing: border-box;
     }
+    .back-button {
+        margin-top: 20px;
+        padding: 10px 20px;
+        font-size: 16px;
+        cursor: pointer;
+    }
   </style>
 </head>
 <body>
+    <button class="back-button" onclick="window.location.href='params_info.html'">View Params</button>
     <h1 style="color: blue; animation: moveTitle 2s ease-in-out infinite alternate;" class="center">Computer Networks 2023: Exercise 1</h1>
-
     <h2 style="color: red;" class="center">Ido Shenbach and Yotam Peled</h2>
 
     <div class="center">
@@ -57,7 +63,7 @@
     <hr>
 
     <div class="center">
-        <form action="http://localhost:8080/index.html" method="post" >
+        <form action="http://localhost:8080/params_info.html" method="post" >
             <label for="sender">Sender:</label>
             <input type="text" id="sender" name="sender" required>
 

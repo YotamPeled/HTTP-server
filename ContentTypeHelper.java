@@ -1,20 +1,20 @@
 import java.io.IOException;
 
 public class ContentTypeHelper {
-    public static ContentType GetContentType(String file) throws IOException{
+    public static ContentType GetContentType(String file) {
         String[] fileSplitted = file.split("\\.");
         String fileExtension = fileSplitted[fileSplitted.length - 1];
         return getContentTypeFromFileExtension(fileExtension);
     }
 
-    private static ContentType getContentTypeFromFileExtension(String fileExtension) throws IOException{
+    private static ContentType getContentTypeFromFileExtension(String fileExtension) {
         for (ContentType type : ContentType.values()) {
             if (type.name().equalsIgnoreCase(fileExtension)) {
                 return type;
             }
         }
 
-        throw new IOException("file extension not supported");
+        return ContentType.other;
     }
 
     public enum ContentType {
@@ -23,7 +23,8 @@ public class ContentTypeHelper {
         png("image"),
         bmp("image"),
         gif("image"),
-        ico("icon");
+        ico("icon"),
+        other("application/octet-stream");
 
         private String description;
 
