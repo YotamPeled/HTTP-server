@@ -57,6 +57,7 @@ public class HttpResponse {
                     break;
                 case TRACE:
                     processTraceRequest(output, userRequest);
+                    break;
                 case PUT:
                 case PATCH:
                 case DELETE:
@@ -72,6 +73,13 @@ public class HttpResponse {
         catch (IOException ex)
         {
             badRequest(output);
+        }
+        catch (IllegalArgumentException ex){
+            badRequest(output);
+        }
+        catch (Exception ex)
+        {
+            serverError(output);
         }
     }
 

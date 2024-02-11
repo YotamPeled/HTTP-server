@@ -24,11 +24,13 @@ public class HttpRequest {
 
     private void parseRequest(String request) throws IOException{
         request = request.replaceAll("\\.\\./", "");
-        String method = request.split(" ")[0].replaceAll("\\s+$", "");
+        String method = request.split("[ \n]+")[0].replaceAll("\\s+$", "");
+        System.out.println("Request Method: " + method);
         this.RequestType = eRequestType.valueOf(method);
         this.extractHeaderValues(request);
 
-        String requestedPage = request.split(" ").length > 1 ? request.split(" ")[1].split("\\?")[0].replaceAll("\\s+$", "") : "";
+        String requestedPage = request.split("\n")[0].split(" ").length > 1 ? request.split(" ")[1].split("\\?")[0].replaceAll("\\s+$", "") : "";
+        System.out.println("Requested Page: " + requestedPage);
         if(requestedPage.isEmpty() || requestedPage.equals("/"))
         {
             requestedPage = HttpServer.getDefaultPage().toString();
