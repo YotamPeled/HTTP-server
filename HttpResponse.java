@@ -16,6 +16,7 @@ public class HttpResponse {
         this.StatusCode = statusCode;
         this.ContentType = contentType;
         this.Body = body;
+
         this.IsHeadOnly = request.getRequestType() == eRequestType.HEAD;
         this.IsChunked = request.isChunked();
 
@@ -41,40 +42,45 @@ public class HttpResponse {
 
     public static void serverError(OutputStream output) {
         //todo make a predefined server error http request
-        new HttpResponse(500, ContentTypeHelper.ContentType.html, BodyFactory.GetPredefinedBody(500), new HttpRequest(""), output);
+        new HttpResponse(500, ContentTypeHelper.ContentType.html, BodyFactory.GetPredefinedBody(500), new HttpRequest(), output);
     }
 
     public static void ProcessRequest(OutputStream output, String userRequest) {
-        HttpRequest request = new HttpRequest(userRequest);
+        try {
+            HttpRequest request = new HttpRequest(userRequest);
 
-        switch (request.getRequestType()){
-            case HEAD:
-            case POST:
-            case GET:
-                readAndSendFile(output, request);
-                break;
-            case TRACE:
-                processTraceRequest(output, userRequest);
-            case PUT:
-            case PATCH:
-            case DELETE:
-            case CONNECT:
-            case OPTIONS:
-                notImplemented(output, request);
-                break;
-            default:
-                badRequest(output, request);
-                break;
+            switch (request.getRequestType()){
+                case HEAD:
+                case POST:
+                case GET:
+                    readAndSendFile(output, request);
+                    break;
+                case TRACE:
+                    processTraceRequest(output, userRequest);
+                case PUT:
+                case PATCH:
+                case DELETE:
+                case CONNECT:
+                case OPTIONS:
+                    notImplemented(output, request);
+                    break;
+                default:
+                    badRequest(output);
+                    break;
+            }
+        }
+        catch (IOException ex)
+        {
+            badRequest(output);
         }
     }
 
     private static void processTraceRequest(OutputStream output, String request) {
-        PrintWriter writer = new PrintWriter(output, true);
-        writer.println(request);
+        new HttpResponse(200, ContentTypeHelper.ContentType.other, request.getBytes(), new HttpRequest(), output);
     }
 
-    private static void badRequest(OutputStream output, HttpRequest request) {
-       new HttpResponse(400, ContentTypeHelper.ContentType.html, BodyFactory.GetPredefinedBody(400), request,output);
+    private static void badRequest(OutputStream output) {
+       new HttpResponse(400, ContentTypeHelper.ContentType.html, BodyFactory.GetPredefinedBody(400), new HttpRequest(), output);
     }
 
     private static void notImplemented(OutputStream output, HttpRequest request) {

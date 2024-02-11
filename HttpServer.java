@@ -14,8 +14,10 @@ public class HttpServer {
         return rootDirectory;
     }
 
+    public static File getDefaultPage() { return defaultPage; }
+
     private static File rootDirectory;
-    private String defaultPage;
+    private static File defaultPage;
     private ExecutorService threadPool;
 
     public HttpServer(String configFilePath) {
@@ -24,7 +26,7 @@ public class HttpServer {
             config.load(new FileInputStream(configFilePath));
             this.port = Integer.parseInt(config.getProperty("port"));
             this.rootDirectory = new File(config.getProperty("root"));
-            this.defaultPage = config.getProperty("defaultPage");
+            this.defaultPage = new File(config.getProperty("defaultPage"));
             int maxThreads = Integer.parseInt(config.getProperty("maxThreads"));
             this.threadPool = Executors.newFixedThreadPool(maxThreads);
             this.Data = new ArrayList<Map<String, String>>();
@@ -94,9 +96,9 @@ public class HttpServer {
     private static class ClientHandler implements Runnable {
         private Socket clientSocket;
         private File rootDirectory;
-        private String defaultPage;
+        private File defaultPage;
 
-        public ClientHandler(Socket clientSocket, File rootDirectory, String defaultPage) {
+        public ClientHandler(Socket clientSocket, File rootDirectory, File defaultPage) {
             this.clientSocket = clientSocket;
             this.rootDirectory = rootDirectory;
             this.defaultPage = defaultPage;
@@ -131,8 +133,6 @@ public class HttpServer {
                     reader.read(body, 0, contentLength);
                     requestBuilder.append(new String(body));
                 }
-
-
                 // get the request type
                 String serverResponse = "";
 

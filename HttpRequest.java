@@ -1,25 +1,39 @@
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
 public class HttpRequest {
     private eRequestType RequestType;
     private Boolean IsChunked;
+    private int ContentLength;
     private String RequestedPage;
+
+    public int getContentLength() {return ContentLength;}
+
     public Boolean isChunked() {return IsChunked;}
     public String getRequestedPage() {return RequestedPage;}
     public eRequestType getRequestType() {return RequestType;}
-    public HttpRequest(String request){
+
+    public HttpRequest(){
+        this.IsChunked = false;
+    }
+
+    public HttpRequest(String request)throws IOException{
         parseRequest(request);
     }
 
-    private void parseRequest(String request){
-        request.replaceAll("../", "");
+    private void parseRequest(String request) throws IOException{
+        request = request.replaceAll("\\.\\./", "");
         String method = request.split(" ")[0].replaceAll("\\s+$", "");
         this.RequestType = eRequestType.valueOf(method);
-
-        this.IsChunked = request.contains("chunked: yes");
+        this.extractHeaderValues(request);
 
         String requestedPage = request.split(" ").length > 1 ? request.split(" ")[1].split("\\?")[0].replaceAll("\\s+$", "") : "";
+        if(requestedPage.isEmpty() || requestedPage.equals("/"))
+        {
+            requestedPage = HttpServer.getDefaultPage().toString();
+        }
+
         this.RequestedPage = HttpServer.getRootDirectory() + requestedPage;
 
         if(this.RequestType == eRequestType.POST || this.RequestType == eRequestType.GET)
@@ -64,4 +78,37 @@ public class HttpRequest {
             }
         }
     }
+
+    private void extractHeaderValues(String request) throws IOException {
+        this.ContentLength = -1;
+        this.IsChunked = false;
+        String[] lines = request.split("\n");
+        for (String line : lines) {
+            line = line.toLowerCase();
+            if (line.startsWith("content-length:")) {
+                String value = line.substring("content-length:".length()).trim();
+                try {
+                    this.ContentLength = Integer.parseInt(value);
+                    // Ensure contentLength is not negative
+                    if (this.ContentLength < 0) {
+                        throw new IOException("negative content length not allowed");
+                    }
+                    break; // Exit the loop once a valid Content-Length is found
+                } catch (NumberFormatException e) {
+                    throw new IOException("content length expected to be a positive number");
+                }
+            }
+            else if (line.startsWith("chunked:")){
+                String value = line.substring("chunked:".length()).trim();
+                if (!value.equals("yes") && !value.equals("no")){
+                    throw new IOException("invalid chunked value");
+                }
+                else{
+                    this.IsChunked = value.equals("yes");
+                }
+            }
+        }
+    }
+
+
 }
