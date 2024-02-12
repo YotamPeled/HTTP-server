@@ -7,7 +7,7 @@ public class BodyFactory {
             case 400:
                  body = "<html><head><title>400 Bad Request</title></head>"
                         + "<body><h1>400 Bad Request</h1>"
-                        + "<p>add later</p></body></html>";
+                        + "<p>Bad Request</p></body></html>";
                  break;
             case 404:
                 body = "<html><head><title>404 Not Found</title></head>"
@@ -20,7 +20,7 @@ public class BodyFactory {
             case 501:
                 body = "<html><head><title>501 Not Implemented</title></head>"
                         + "<body><h1>501 Not Implemented</h1>"
-                        + "<p>add later</p></body></html>";
+                        + "<p>Not Implemented</p></body></html>";
                 break;
 
         }

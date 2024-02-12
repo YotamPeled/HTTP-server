@@ -1,3 +1,4 @@
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -41,7 +42,7 @@ public class HttpRequest {
 
         this.RequestedPage = HttpServer.getRootDirectory() + requestedPage;
         if (!Files.exists(Paths.get(this.RequestedPage))){
-            throw new IOException("Requested Page doesn't exist");
+            throw new FileNotFoundException("Requested Page doesn't exist");
         }
 
         if(this.RequestType == eRequestType.POST || this.RequestType == eRequestType.GET)

@@ -131,6 +131,7 @@ public class HttpServer {
                 if (contentLength > 0) {
                     char[] body = new char[contentLength];
                     reader.read(body, 0, contentLength);
+                    System.out.println(body);
                     requestBuilder.append(new String(body));
                 }
                 // get the request type

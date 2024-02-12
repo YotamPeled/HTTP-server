@@ -70,11 +70,14 @@ public class HttpResponse {
                     break;
             }
         }
+        catch(FileNotFoundException ex){
+            notFound(output, new HttpRequest());
+        }
         catch (IOException ex)
         {
             badRequest(output);
         }
-        catch (IllegalArgumentException ex){
+        catch (IllegalArgumentException ex) {
             badRequest(output);
         }
         catch (Exception ex)
