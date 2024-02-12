@@ -23,7 +23,7 @@ public class HttpRequest {
     }
 
     private void parseRequest(String request) throws IOException{
-        request = request.replaceAll("\\.\\./", "");
+        request = request.replaceAll("\\.\\./", "\\./");
         String method = request.split("[ \n]+")[0].replaceAll("\\s+$", "");
         System.out.println("Request Method: " + method);
         this.RequestType = eRequestType.valueOf(method);
