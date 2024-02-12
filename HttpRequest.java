@@ -1,4 +1,7 @@
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -37,6 +40,9 @@ public class HttpRequest {
         }
 
         this.RequestedPage = HttpServer.getRootDirectory() + requestedPage;
+        if (!Files.exists(Paths.get(this.RequestedPage))){
+            throw new IOException("Requested Page doesn't exist");
+        }
 
         if(this.RequestType == eRequestType.POST || this.RequestType == eRequestType.GET)
         {
