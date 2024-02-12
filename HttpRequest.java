@@ -38,7 +38,9 @@ public class HttpRequest {
             requestedPage = HttpServer.getDefaultPage().toString();
         }
 
-        this.RequestedPage = HttpServer.getRootDirectory() + requestedPage;
+        System.out.println("Requested Page: " + requestedPage);
+        this.RequestedPage = !requestedPage.contains("Sources") ? HttpServer.getRootDirectory() + requestedPage : HttpServer.getHomeEnvironment() + requestedPage;
+        System.out.println("Requested Page: " + this.RequestedPage);
         if (!Files.exists(Paths.get(this.RequestedPage))){
             throw new FileNotFoundException("Requested Page doesn't exist");
         }

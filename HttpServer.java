@@ -18,6 +18,10 @@ public class HttpServer {
 
     private static File rootDirectory;
     private static File defaultPage;
+    private static File HomeEnvironment;
+
+    public static File getHomeEnvironment() {return HomeEnvironment;}
+
     private ExecutorService threadPool;
 
     public HttpServer(String configFilePath) {
@@ -25,7 +29,8 @@ public class HttpServer {
         try {
             config.load(new FileInputStream(configFilePath));
             this.port = Integer.parseInt(config.getProperty("port"));
-            this.rootDirectory = new File(config.getProperty("root"));
+            this.HomeEnvironment = new File(System.getProperty("user.home"));
+            this.rootDirectory = new File(config.getProperty("root").replace("~", System.getProperty("user.home")));
             this.defaultPage = new File(config.getProperty("defaultPage"));
             int maxThreads = Integer.parseInt(config.getProperty("maxThreads"));
             this.threadPool = Executors.newFixedThreadPool(maxThreads);
