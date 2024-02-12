@@ -1,3 +1,3 @@
 #!/bin/bash
 
-javac Main.java
+javac ./Sources/Main.java
