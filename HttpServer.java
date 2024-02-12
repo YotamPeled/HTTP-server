@@ -125,13 +125,13 @@ public class HttpServer {
                 }
 
                 // print the request headers
-                System.out.println("user request: \n" + requestBuilder);
+                System.out.println("User request: \n" + requestBuilder);
 
                 // Read body if Content-Length is present
                 if (contentLength > 0) {
                     char[] body = new char[contentLength];
                     reader.read(body, 0, contentLength);
-                    System.out.println(body);
+                    System.out.println("user request body: \n" + new String(body));
                     requestBuilder.append(new String(body));
                 }
                 // get the request type

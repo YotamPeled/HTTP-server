@@ -29,12 +29,10 @@ public class HttpRequest {
     private void parseRequest(String request) throws IOException{
         request = request.replaceAll("\\.\\./", "\\./");
         String method = request.split("[ \n]+")[0].replaceAll("\\s+$", "");
-        System.out.println("Request Method: " + method);
         this.RequestType = eRequestType.valueOf(method);
         this.extractHeaderValues(request);
 
-        String requestedPage = request.split("\n")[0].split(" ").length > 1 ? request.split(" ")[1].split("\\?")[0].replaceAll("\\s+$", "") : "";
-        System.out.println("Requested Page: " + requestedPage);
+        String requestedPage = request.split("\r\n")[0].split(" ").length > 1 ? request.split("\r\n")[0].split(" ")[1].split("\\?")[0].replaceAll("\\s+$", "") : "";
         if(requestedPage.isEmpty() || requestedPage.equals("/"))
         {
             requestedPage = HttpServer.getDefaultPage().toString();
@@ -49,7 +47,7 @@ public class HttpRequest {
         {
             Map<String, String> map = new HashMap<String, String>();
             parseURLParams(request, map);
-            if (this.RequestType == eRequestType.POST){
+            if (this.RequestType == eRequestType.POST && this.ContentLength > 0){
                 parseBodyParams(request, map);
             }
 
@@ -61,7 +59,7 @@ public class HttpRequest {
     }
 
     private void parseBodyParams(String request, Map<String, String> map) {
-        String[] requestLines = request.split("\\r?\\n");
+        String[] requestLines = request.split("\\r\\n");
         String paramString = requestLines[requestLines.length - 1];
         String[] paramPairs = paramString.split("&"); // Split into key-value pairs
         insertData(paramPairs, map);
@@ -69,7 +67,7 @@ public class HttpRequest {
 
     private void parseURLParams(String request, Map<String, String> map){
         if (request.split(" ").length > 1 && request.split(" ")[1].split("\\?").length > 1) {
-            String paramString = request.split(" ")[1].split("\\?")[1]; // Get the part after '?'
+            String paramString = request.split(" ")[1].split("\\?")[1].split("\\r\\n")[0]; // Get the part after '?'
             String[] paramPairs = paramString.split("&"); // Split into key-value pairs
             insertData(paramPairs, map);
         }

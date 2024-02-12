@@ -15,7 +15,7 @@ public class SenderUtils {
         header.append("Content-Length: " + headerLength);
         header.append(System.lineSeparator());
         //send the headers
-        System.out.println(header);
+        System.out.println("Server response: \r\n" + header);
 
         response.getOutput().write(header.toString().getBytes());
         response.getOutput().write("\r\n".getBytes(StandardCharsets.UTF_8));

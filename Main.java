@@ -1,6 +1,6 @@
 public class Main {
     public static void main(String args[]){
-        String configFilePath = "./HTTP-server/config.ini"; // Replace with the path to your config.ini file
+        String configFilePath = "./config.ini";
         HttpServer server = new HttpServer(configFilePath);
         server.start();
     }
